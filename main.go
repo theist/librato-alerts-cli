@@ -8,7 +8,6 @@ import (
 	"os"
 	"encoding/json"
 	"github.com/fatih/color"
-	"github.com/spf13/cobra"
 )
 
 type Alert struct {
@@ -77,6 +76,17 @@ func main() {
 	// resty configuration
 	resty.SetDebug(false)
 	resty.SetBasicAuth(os.Getenv("MAIL"), os.Getenv("TOKEN"))
+	// check arg 0
+	mode := "list"
+	if len(os.Args) > 1 {
+		mode = os.Args[1]
+	}
+
+	switch mode {
+	case "list", "enable", "disable", "help", "status", "recent":
+	default:
+		mode = "help"
+	}
 
 	// check stdin
 	fi, err := os.Stdin.Stat()
@@ -84,8 +94,35 @@ func main() {
 		log.Fatal("Unable to read stdin >", err)
 	}
 	if fi.Size() > 0 {
-
+		switch mode {
+		case "list", "status", "recent":
+			log.Fatal(mode, " mode can't be called with piped data, please use enable or disable mode")
+		case "enable":
+			//TODO: implement enable
+			log.Fatal("Unimplemented mode ", mode)
+		case "disable":
+			//TODO: implement disable
+			log.Fatal("Unimplemented mode ", mode)
+		default:
+			log.Fatal("unknown mode ", mode)
+		}
 	} else {
-		print_alerts()
+		switch mode {
+		case "enable", "disable":
+			log.Fatal("Enable or disable requires a list of alerts piped into comand")
+		case "list":
+			print_alerts()
+		case "help":
+			//TODO: implement help
+			log.Fatal("Unimplemented mode ", mode)
+		case "status":
+			//TODO: implement status
+			log.Fatal("Unimplemented mode ", mode)
+		case "recent":
+			//TODO: implement recent
+			log.Fatal("Unimplemented mode ", mode)
+		default:
+			log.Fatal("unknown mode ", mode)
+		}
 	}
 }
