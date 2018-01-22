@@ -8,7 +8,18 @@ import (
 	"os"
 	"encoding/json"
 	"github.com/fatih/color"
+	"strconv"
 )
+
+type StatusResponse struct {
+	Firing []AlertEvent `json:"firing"`
+	Cleared []AlertEvent `json:"cleared"`
+}
+
+type AlertEvent struct {
+	ID          int `json:"id"`
+	TriggeredAt int `json:"triggered_at"`
+}
 
 type Alert struct {
 	ID          int    `json:"id"`
@@ -42,9 +53,58 @@ type Alert struct {
 	Md             bool `json:"md"`
 }
 
-type Response struct {
+type AlertListResponse struct {
 	Query	string 	`json:"query"`
 	Alerts	[]Alert	`json:"alerts"`
+}
+
+//TODO: firing and recent can be only one func parametrized
+func print_firing(){
+	resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts/status")
+	if err != nil {
+		log.Fatal("Error getting alert status > ", err)
+	}
+	var json_res StatusResponse
+	json.Unmarshal([]byte(resp.String()), &json_res)
+
+	if len(json_res.Firing) > 0 {
+		fmt.Println("Alerts firing:")
+		for _, alert := range json_res.Firing {
+			resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts/" + strconv.Itoa(alert.ID))
+			if err != nil {
+				log.Fatal("Error getting alert id > ", err)
+			}
+			var json_alert Alert
+			json.Unmarshal([]byte(resp.String()), &json_alert)
+			fmt.Println(json_alert.Name)
+		}
+	} else {
+		fmt.Println("There are no alerts firing at this moment")
+	}
+}
+
+func print_recent() {
+	resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts/status")
+	if err != nil {
+		log.Fatal("Error getting alert status > ", err)
+	}
+	var json_res StatusResponse
+	json.Unmarshal([]byte(resp.String()), &json_res)
+
+	if len(json_res.Cleared) > 0 {
+		fmt.Println("Alerts recently cleared:")
+		for _, alert := range json_res.Cleared {
+			resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts/" + strconv.Itoa(alert.ID))
+			if err != nil {
+				log.Fatal("Error getting alert id > ", err)
+			}
+			var json_alert Alert
+			json.Unmarshal([]byte(resp.String()), &json_alert)
+			fmt.Println(json_alert.Name)
+		}
+	} else {
+		fmt.Println("There are no alerts recently cleared at this moment")
+	}
 }
 
 func print_alerts(){
@@ -54,7 +114,7 @@ func print_alerts(){
 		log.Fatal("Error getting alert list > ", err)
 	}
 
-	var json_res Response
+	var json_res AlertListResponse
 	json.Unmarshal([]byte(resp.String()), &json_res)
 
 	for _, alert := range json_res.Alerts {
@@ -116,11 +176,9 @@ func main() {
 			//TODO: implement help
 			log.Fatal("Unimplemented mode ", mode)
 		case "status":
-			//TODO: implement status
-			log.Fatal("Unimplemented mode ", mode)
+			print_firing()
 		case "recent":
-			//TODO: implement recent
-			log.Fatal("Unimplemented mode ", mode)
+			print_recent()
 		default:
 			log.Fatal("unknown mode ", mode)
 		}
