@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"bufio"
 	"github.com/joho/godotenv"
 	"gopkg.in/resty.v1"
 	"log"
@@ -9,6 +10,7 @@ import (
 	"encoding/json"
 	"github.com/fatih/color"
 	"strconv"
+	"strings"
 )
 
 type StatusResponse struct {
@@ -107,7 +109,68 @@ func printRecent() {
 	}
 }
 
-func print_alerts(){
+func alertsEnable() {
+	resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts")
+	if err != nil {
+		log.Fatal("Error getting alert list > ", err)
+	}
+
+	var jsonRes AlertListResponse
+	json.Unmarshal([]byte(resp.String()), &jsonRes)
+
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		line := string(scanner.Text())
+		alertName := line
+		if strings.Contains(line,string(':')) {
+			arr := strings.Split(line,string(':'))
+			alertName = arr[0]
+		}
+		for _,alert := range jsonRes.Alerts {
+			if alert.Name == alertName {
+				if alert.Active {
+					fmt.Println("alert " + alertName + " already enabled")
+				} else {
+					fmt.Println("enabling alert " + alertName)
+					//TODO: enabling alert
+				}
+			}
+		}
+	}
+}
+
+func alertsDisable() {
+	resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts")
+	if err != nil {
+		log.Fatal("Error getting alert list > ", err)
+	}
+
+	var jsonRes AlertListResponse
+	json.Unmarshal([]byte(resp.String()), &jsonRes)
+
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		line := string(scanner.Text())
+		alertName := line
+		if strings.Contains(line,string(':')) {
+			arr := strings.Split(line,string(':'))
+			alertName = arr[0]
+		}
+		for _,alert := range jsonRes.Alerts {
+			if alert.Name == alertName {
+				if alert.Active {
+					fmt.Println("disabling alert " + alertName)
+					//TODO: enabling alert
+				} else {
+					fmt.Println("alert " + alertName + " already disabled")
+				}
+			}
+		}
+	}
+}
+
+
+func printAlerts() {
 
 	resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts")
 	if err != nil {
@@ -158,10 +221,9 @@ func main() {
 		case "list", "status", "recent":
 			log.Fatal(mode, " mode can't be called with piped data, please use enable or disable mode")
 		case "enable":
-			//TODO: implement enable
-			log.Fatal("Unimplemented mode ", mode)
+			alertsEnable()
 		case "disable":
-			//TODO: implement disable
+			alertsDisable()
 			log.Fatal("Unimplemented mode ", mode)
 		default:
 			log.Fatal("unknown mode ", mode)
