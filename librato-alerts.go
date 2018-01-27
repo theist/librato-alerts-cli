@@ -153,7 +153,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Unable to read stdin >", err)
 	}
-	if fi.Size() > 0 {
+	if (fi.Mode() & os.ModeCharDevice) == 0 {
 		switch mode {
 		case "list", "status", "recent":
 			log.Fatal(mode, " mode can't be called with piped data, please use enable or disable mode")
