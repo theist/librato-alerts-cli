@@ -59,48 +59,48 @@ type AlertListResponse struct {
 }
 
 //TODO: firing and recent can be only one func parametrized
-func print_firing(){
+func printFiring(){
 	resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts/status")
 	if err != nil {
 		log.Fatal("Error getting alert status > ", err)
 	}
-	var json_res StatusResponse
-	json.Unmarshal([]byte(resp.String()), &json_res)
+	var jsonRes StatusResponse
+	json.Unmarshal([]byte(resp.String()), &jsonRes)
 
-	if len(json_res.Firing) > 0 {
+	if len(jsonRes.Firing) > 0 {
 		fmt.Println("Alerts firing:")
-		for _, alert := range json_res.Firing {
+		for _, alert := range jsonRes.Firing {
 			resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts/" + strconv.Itoa(alert.ID))
 			if err != nil {
 				log.Fatal("Error getting alert id > ", err)
 			}
-			var json_alert Alert
-			json.Unmarshal([]byte(resp.String()), &json_alert)
-			fmt.Println(json_alert.Name)
+			var jsonAlert Alert
+			json.Unmarshal([]byte(resp.String()), &jsonAlert)
+			fmt.Println(jsonAlert.Name)
 		}
 	} else {
 		fmt.Println("There are no alerts firing at this moment")
 	}
 }
 
-func print_recent() {
+func printRecent() {
 	resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts/status")
 	if err != nil {
 		log.Fatal("Error getting alert status > ", err)
 	}
-	var json_res StatusResponse
-	json.Unmarshal([]byte(resp.String()), &json_res)
+	var jsonRes StatusResponse
+	json.Unmarshal([]byte(resp.String()), &jsonRes)
 
-	if len(json_res.Cleared) > 0 {
+	if len(jsonRes.Cleared) > 0 {
 		fmt.Println("Alerts recently cleared:")
-		for _, alert := range json_res.Cleared {
+		for _, alert := range jsonRes.Cleared {
 			resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts/" + strconv.Itoa(alert.ID))
 			if err != nil {
 				log.Fatal("Error getting alert id > ", err)
 			}
-			var json_alert Alert
-			json.Unmarshal([]byte(resp.String()), &json_alert)
-			fmt.Println(json_alert.Name)
+			var jsonAlert Alert
+			json.Unmarshal([]byte(resp.String()), &jsonAlert)
+			fmt.Println(jsonAlert.Name)
 		}
 	} else {
 		fmt.Println("There are no alerts recently cleared at this moment")
@@ -114,10 +114,10 @@ func print_alerts(){
 		log.Fatal("Error getting alert list > ", err)
 	}
 
-	var json_res AlertListResponse
-	json.Unmarshal([]byte(resp.String()), &json_res)
+	var jsonRes AlertListResponse
+	json.Unmarshal([]byte(resp.String()), &jsonRes)
 
-	for _, alert := range json_res.Alerts {
+	for _, alert := range jsonRes.Alerts {
 		fmt.Print(color.HiYellowString(alert.Name), ": ")
 		if alert.Active {
 			color.HiGreen("Active")
@@ -169,16 +169,16 @@ func main() {
 	} else {
 		switch mode {
 		case "enable", "disable":
-			log.Fatal("Enable or disable requires a list of alerts piped into comand")
+			log.Fatal(mode +" mode requires a list of alerts piped into comand")
 		case "list":
-			print_alerts()
+			printAlerts()
 		case "help":
 			//TODO: implement help
 			log.Fatal("Unimplemented mode ", mode)
 		case "status":
-			print_firing()
+			printFiring()
 		case "recent":
-			print_recent()
+			printRecent()
 		default:
 			log.Fatal("unknown mode ", mode)
 		}
