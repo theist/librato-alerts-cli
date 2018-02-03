@@ -1,20 +1,20 @@
 package main
 
 import (
-	"fmt"
 	"bufio"
+	"encoding/json"
+	"fmt"
+	"github.com/fatih/color"
 	"github.com/joho/godotenv"
 	"gopkg.in/resty.v1"
 	"log"
 	"os"
-	"encoding/json"
-	"github.com/fatih/color"
 	"strconv"
 	"strings"
 )
 
 type StatusResponse struct {
-	Firing []AlertEvent `json:"firing"`
+	Firing  []AlertEvent `json:"firing"`
 	Cleared []AlertEvent `json:"cleared"`
 }
 
@@ -56,12 +56,12 @@ type Alert struct {
 }
 
 type AlertListResponse struct {
-	Query	string 	`json:"query"`
-	Alerts	[]Alert	`json:"alerts"`
+	Query  string  `json:"query"`
+	Alerts []Alert `json:"alerts"`
 }
 
 //TODO: firing and recent can be only one func parametrized
-func printFiring(){
+func printFiring() {
 	resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts/status")
 	if err != nil {
 		log.Fatal("Error getting alert status > ", err)
@@ -122,11 +122,11 @@ func alertsEnable() {
 	for scanner.Scan() {
 		line := string(scanner.Text())
 		alertName := line
-		if strings.Contains(line,string(':')) {
-			arr := strings.Split(line,string(':'))
+		if strings.Contains(line, string(':')) {
+			arr := strings.Split(line, string(':'))
 			alertName = arr[0]
 		}
-		for _,alert := range jsonRes.Alerts {
+		for _, alert := range jsonRes.Alerts {
 			if alert.Name == alertName {
 				if alert.Active {
 					fmt.Println("alert " + alertName + " already enabled")
@@ -135,7 +135,7 @@ func alertsEnable() {
 					alert.Active = true
 					_, updateErr := resty.R().SetBody(alert).Put("https://metrics-api.librato.com/v1/alerts/" + strconv.Itoa(alert.ID))
 					if updateErr != nil {
-						log.Fatal("Error updating alert " + alert.Name )
+						log.Fatal("Error updating alert " + alert.Name)
 					}
 					fmt.Println(alert.Name + " enabled")
 				}
@@ -157,18 +157,18 @@ func alertsDisable() {
 	for scanner.Scan() {
 		line := string(scanner.Text())
 		alertName := line
-		if strings.Contains(line,string(':')) {
-			arr := strings.Split(line,string(':'))
+		if strings.Contains(line, string(':')) {
+			arr := strings.Split(line, string(':'))
 			alertName = arr[0]
 		}
-		for _,alert := range jsonRes.Alerts {
+		for _, alert := range jsonRes.Alerts {
 			if alert.Name == alertName {
 				if alert.Active {
 					fmt.Println("disabling alert " + alert.Name)
 					alert.Active = false
 					_, updateErr := resty.R().SetBody(alert).Put("https://metrics-api.librato.com/v1/alerts/" + strconv.Itoa(alert.ID))
 					if updateErr != nil {
-						log.Fatal("Error updating alert " + alert.Name )
+						log.Fatal("Error updating alert " + alert.Name)
 					}
 					fmt.Println(alert.Name + " disabled")
 				} else {
@@ -178,7 +178,6 @@ func alertsDisable() {
 		}
 	}
 }
-
 
 func printAlerts() {
 
@@ -240,7 +239,7 @@ func main() {
 	} else {
 		switch mode {
 		case "enable", "disable":
-			log.Fatal(mode +" mode requires a list of alerts piped into comand")
+			log.Fatal(mode + " mode requires a list of alerts piped into comand")
 		case "list":
 			printAlerts()
 		case "help":
