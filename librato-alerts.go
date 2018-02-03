@@ -132,7 +132,12 @@ func alertsEnable() {
 					fmt.Println("alert " + alertName + " already enabled")
 				} else {
 					fmt.Println("enabling alert " + alertName)
-					//TODO: enabling alert
+					alert.Active = true
+					_, updateErr := resty.R().SetBody(alert).Put("https://metrics-api.librato.com/v1/alerts/" + strconv.Itoa(alert.ID))
+					if updateErr != nil {
+						log.Fatal("Error updating alert " + alert.Name )
+					}
+					fmt.Println(alert.Name + " enabled")
 				}
 			}
 		}
@@ -159,8 +164,13 @@ func alertsDisable() {
 		for _,alert := range jsonRes.Alerts {
 			if alert.Name == alertName {
 				if alert.Active {
-					fmt.Println("disabling alert " + alertName)
-					//TODO: enabling alert
+					fmt.Println("disabling alert " + alert.Name)
+					alert.Active = false
+					_, updateErr := resty.R().SetBody(alert).Put("https://metrics-api.librato.com/v1/alerts/" + strconv.Itoa(alert.ID))
+					if updateErr != nil {
+						log.Fatal("Error updating alert " + alert.Name )
+					}
+					fmt.Println(alert.Name + " disabled")
 				} else {
 					fmt.Println("alert " + alertName + " already disabled")
 				}
@@ -224,7 +234,6 @@ func main() {
 			alertsEnable()
 		case "disable":
 			alertsDisable()
-			log.Fatal("Unimplemented mode ", mode)
 		default:
 			log.Fatal("unknown mode ", mode)
 		}
