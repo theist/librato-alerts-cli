@@ -247,7 +247,7 @@ func main() {
 	}
 	// resty configuration
 	resty.SetDebug(false)
-	resty.SetBasicAuth(os.Getenv("MAIL"), os.Getenv("TOKEN"))
+	resty.SetBasicAuth(os.Getenv("LIBRATO_MAIL"), os.Getenv("LIBRATO_TOKEN"))
 	// check arg 0
 	mode := "list"
 	if len(os.Args) > 1 {
