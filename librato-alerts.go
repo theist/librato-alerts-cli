@@ -253,13 +253,6 @@ func main() {
 	if len(os.Args) > 1 {
 		mode = os.Args[1]
 	}
-
-	switch mode {
-	case "list", "enable", "disable", "help", "status", "recent":
-	default:
-		mode = "help"
-	}
-
 	// check stdin
 	fi, err := os.Stdin.Stat()
 	if err != nil {
@@ -274,7 +267,7 @@ func main() {
 		case "disable":
 			alertsDisable()
 		default:
-			log.Fatal("unknown mode ", mode)
+			printHelp()
 		}
 	} else {
 		switch mode {
@@ -289,7 +282,7 @@ func main() {
 		case "recent":
 			printRecent()
 		default:
-			log.Fatal("unknown mode ", mode)
+			printHelp()
 		}
 	}
 }
