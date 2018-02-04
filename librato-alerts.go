@@ -217,6 +217,14 @@ input thru a pipe, the output of ` + "`" + `list` + "`" + ` can be used for this
 ` + "```" + `
    librato-alerts list | grep <pattern> | librato-alerts disable
 ` + "```" + `
+
+## CONFIGURATION
+
+This requires two environment varables to store the librato credentials, 
+` + "`" + `LIBRATO_MAIL` + "`" + ` with the librato user's mail and ` + "`" + `LIBRATO_TOKEN` + "`" + `
+with a valid librato API token. API token must have read / write access to allow update alarms state.
+The environment variables can also be placed in an ` + "`" + `.env` + "`" + ` file.
+
 ## MODES
 
 ` + "```" + `
