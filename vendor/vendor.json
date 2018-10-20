@@ -27,6 +27,12 @@
 			"revisionTime": "2018-08-30T10:17:45Z"
 		},
 		{
+			"checksumSHA1": "a58zUNtDH/gEd6F6KI3FqT2iEo0=",
+			"path": "github.com/mitchellh/go-homedir",
+			"revision": "ae18d6b8b3205b561c79e8e5f69bff09736185f4",
+			"revisionTime": "2018-08-24T00:42:36Z"
+		},
+		{
 			"checksumSHA1": "0rtkNLoPG+7aUTLSaHewL7D8JQI=",
 			"path": "golang.org/x/net/publicsuffix",
 			"revision": "04a2e542c03f1d053ab3e4d6e5abcd4b66e2be8e",
