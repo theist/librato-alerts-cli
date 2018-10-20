@@ -226,17 +226,17 @@ func printAlerts() {
 
 func printHelp() {
 
-	fmt.Println(`# librato-alerts
+	fmt.Println(`# librato-alerts-cli
 
 Small commandline client to enable and disable alerts in librato legacy
 accounts.
 
-Usage: ` + "`" + ` librato-alerts [help | disable | enable | list | status | recent]` + "`" + `
+Usage: ` + "`" + ` librato-alerts-cli [help | disable | enable | list | status | recent]` + "`" + `
 
 ` + "`" + `enable` + "`" + ` and ` + "`" + `disable` + "`" + ` requires a list of alerts to disable passed by standard
 input thru a pipe, the output of ` + "`" + `list` + "`" + ` can be used for this purpose like this:
 ` + "```" + `
-   librato-alerts list | grep <pattern> | librato-alerts disable
+   librato-alerts-cli list | grep <pattern> | librato-alerts-cli disable
 ` + "```" + `
 
 ## CONFIGURATION
@@ -244,7 +244,9 @@ input thru a pipe, the output of ` + "`" + `list` + "`" + ` can be used for this
 This requires two environment varables to store the librato credentials,
 ` + "`" + `LIBRATO_MAIL` + "`" + ` with the librato user's mail and ` + "`" + `LIBRATO_TOKEN` + "`" + `
 with a valid librato API token. API token must have read / write access to allow update alarms state.
-The environment variables can also be placed in an ` + "`" + `.env` + "`" + ` file.
+The environment variables can also be placed in an ` + "`" + `.env` + "`" + ` file or in a
+` + "`" + `.librato-alerts-cli` + "`" + ` file in home directory. You can use ` + "`" + `librato-alerts-cli config` + "`" + `
+to generate that file.
 
 ## MODES
 
@@ -256,6 +258,7 @@ The environment variables can also be placed in an ` + "`" + `.env` + "`" + ` fi
             and it will be updated only if they are disabled
    disable: Disable alerts passed by stdin. Alerts must be pased one by line,
             and it will be updated only if they are enabled
+   config:  Prints current config in a valid format to be a proper config file.
    help:    This help.
 ` + "```" + `
 
@@ -265,7 +268,29 @@ The environment variables can also be placed in an ` + "`" + `.env` + "`" + ` fi
    which fits in an API call it will not list them.
  * This is tested against an old, no tagged metrics librato account may work
    in the modern ones.`)
+}
 
+func checkEnv() bool {
+	envNeeded := []string{"LIBRATO_MAIL", "LIBRATO_TOKEN"}
+	checkEnv := true
+	for _, envVar := range envNeeded {
+		_, present := os.LookupEnv(envVar)
+		if !present {
+			checkEnv = false
+			log.Println("Missing needed environment variable ", envVar)
+		}
+	}
+	return checkEnv
+}
+
+func printConfig() {
+	userConfigFile, _ := homedir.Expand("~/.librato-alerts-cli")
+	fmt.Printf("# place and fill if needed these lines in a local file called .env\n")
+	fmt.Printf("# or in your home dir as %v\n", userConfigFile)
+	fmt.Printf("# or find a way to set it as environment variables\n")
+	fmt.Printf("# local .env takes precedence over home file, any of these will override already setted environment variables\n\n")
+	fmt.Printf("LIBRATO_MAIL=%v\n", os.Getenv("LIBRATO_MAIL"))
+	fmt.Printf("LIBRATO_TOKEN=%v\n", os.Getenv("LIBRATO_TOKEN"))
 }
 
 func main() {
@@ -279,6 +304,12 @@ func main() {
 	if len(os.Args) > 1 {
 		mode = os.Args[1]
 	}
+	if mode !="config" && mode != "help" && !checkEnv() {
+		log.Fatal("Insufficient configuration. Please run librato-alerts-cli config and follow instructions")
+	}
+	// resty configuration
+	resty.SetDebug(false)
+	resty.SetBasicAuth(os.Getenv("LIBRATO_MAIL"), os.Getenv("LIBRATO_TOKEN"))
 	// check stdin
 	fi, err := os.Stdin.Stat()
 	if err != nil {
@@ -304,6 +335,8 @@ func main() {
 		printRecent()
 	case "status":
 		printFiring()
+	case "config":
+		printConfig()
 	default:
 		printHelp()
 	}
