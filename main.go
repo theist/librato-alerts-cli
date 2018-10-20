@@ -56,7 +56,6 @@ type libratoAlert struct {
 }
 
 type alertListResponse struct {
-	Query  string  `json:"query"`
 	Alerts []libratoAlert `json:"alerts"`
 }
 
@@ -69,7 +68,7 @@ func printFiring() {
 	var jsonRes statusResponse
 	err = json.Unmarshal([]byte(resp.String()), &jsonRes)
 	if err != nil {
-		log.Fatal("Error unmarshaling Firing JSON")
+		log.Fatal("Error unmarshaling Firing JSON: ", err)
 	}
 
 	if len(jsonRes.Firing) > 0 {
@@ -82,7 +81,7 @@ func printFiring() {
 			var jsonAlert libratoAlert
 			err = json.Unmarshal([]byte(resp.String()), &jsonAlert)
 			if err != nil {
-				log.Fatal("Error unmarshaling Firing JSON")
+				log.Fatal("Error unmarshaling Firing JSON: ", err)
 			}
 			fmt.Println(jsonAlert.Name)
 		}
@@ -99,7 +98,7 @@ func printRecent() {
 	var jsonRes statusResponse
 	err = json.Unmarshal([]byte(resp.String()), &jsonRes)
 	if err != nil {
-		log.Fatal("Error unmarshaling Recent JSON")
+		log.Fatal("Error unmarshaling Recent JSON: ", err)
 	}
 
 	if len(jsonRes.Cleared) > 0 {
@@ -112,7 +111,7 @@ func printRecent() {
 			var jsonAlert libratoAlert
 			err = json.Unmarshal([]byte(resp.String()), &jsonAlert)
 			if err != nil {
-				log.Fatal("Error unmarshaling Recent JSON")
+				log.Fatal("Error unmarshaling Recent JSON: ", err)
 			}
 			fmt.Println(jsonAlert.Name)
 		}
@@ -130,9 +129,8 @@ func alertsEnable() {
 	var jsonRes alertListResponse
 	err = json.Unmarshal([]byte(resp.String()), &jsonRes)
 	if err != nil {
-		log.Fatal("Error unmarshaling for Enable Alerts JSON")
+		log.Fatal("Error unmarshaling for Enable Alerts JSON: ", err)
 	}
-
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
@@ -171,7 +169,7 @@ func alertsDisable() {
 	var jsonRes alertListResponse
 	err = json.Unmarshal([]byte(resp.String()), &jsonRes)
 	if err != nil {
-		log.Fatal("Error unmarshaling for Disabled Alerts JSON")
+		log.Fatal("Error unmarshaling for Disabled Alerts JSON: ", err)
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
@@ -212,7 +210,7 @@ func printAlerts() {
 	var jsonRes alertListResponse
 	err = json.Unmarshal([]byte(resp.String()), &jsonRes)
 	if err != nil {
-		log.Fatal("Error unmarshaling Alert List JSON")
+		log.Fatal("Error unmarshaling Alert List JSON: ", err)
 	}
 
 	for _, alert := range jsonRes.Alerts {
