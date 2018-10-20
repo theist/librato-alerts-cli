@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/joho/godotenv"
+	"github.com/mitchellh/go-homedir"
 	"gopkg.in/resty.v1"
 	"log"
 	"os"
@@ -270,9 +271,9 @@ The environment variables can also be placed in an ` + "`" + `.env` + "`" + ` fi
 func main() {
 	// load dotenv
 	godotenv.Load()
-	// resty configuration
-	resty.SetDebug(false)
-	resty.SetBasicAuth(os.Getenv("LIBRATO_MAIL"), os.Getenv("LIBRATO_TOKEN"))
+	userConfigFile, _ := homedir.Expand("~/.librato-alerts-cli")
+	godotenv.Load(userConfigFile)
+
 	// check arg 0
 	mode := "list"
 	if len(os.Args) > 1 {
