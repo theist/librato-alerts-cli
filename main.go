@@ -13,17 +13,17 @@ import (
 	"strings"
 )
 
-type StatusResponse struct {
-	Firing  []AlertEvent `json:"firing"`
-	Cleared []AlertEvent `json:"cleared"`
+type statusResponse struct {
+	Firing  []alertEvent `json:"firing"`
+	Cleared []alertEvent `json:"cleared"`
 }
 
-type AlertEvent struct {
+type alertEvent struct {
 	ID          int `json:"id"`
 	TriggeredAt int `json:"triggered_at"`
 }
 
-type Alert struct {
+type libratoAlert struct {
 	ID          int    `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -55,9 +55,9 @@ type Alert struct {
 	Md             bool `json:"md"`
 }
 
-type AlertListResponse struct {
+type alertListResponse struct {
 	Query  string  `json:"query"`
-	Alerts []Alert `json:"alerts"`
+	Alerts []libratoAlert `json:"alerts"`
 }
 
 //TODO: firing and recent can be only one func parametrized
@@ -66,8 +66,11 @@ func printFiring() {
 	if err != nil {
 		log.Fatal("Error getting alert status > ", err)
 	}
-	var jsonRes StatusResponse
-	json.Unmarshal([]byte(resp.String()), &jsonRes)
+	var jsonRes statusResponse
+	err = json.Unmarshal([]byte(resp.String()), &jsonRes)
+	if err != nil {
+		log.Fatal("Error unmarshaling Firing JSON")
+	}
 
 	if len(jsonRes.Firing) > 0 {
 		fmt.Println("Alerts firing:")
@@ -76,8 +79,11 @@ func printFiring() {
 			if err != nil {
 				log.Fatal("Error getting alert id > ", err)
 			}
-			var jsonAlert Alert
-			json.Unmarshal([]byte(resp.String()), &jsonAlert)
+			var jsonAlert libratoAlert
+			err = json.Unmarshal([]byte(resp.String()), &jsonAlert)
+			if err != nil {
+				log.Fatal("Error unmarshaling Firing JSON")
+			}
 			fmt.Println(jsonAlert.Name)
 		}
 	} else {
@@ -90,8 +96,11 @@ func printRecent() {
 	if err != nil {
 		log.Fatal("Error getting alert status > ", err)
 	}
-	var jsonRes StatusResponse
-	json.Unmarshal([]byte(resp.String()), &jsonRes)
+	var jsonRes statusResponse
+	err = json.Unmarshal([]byte(resp.String()), &jsonRes)
+	if err != nil {
+		log.Fatal("Error unmarshaling Recent JSON")
+	}
 
 	if len(jsonRes.Cleared) > 0 {
 		fmt.Println("Alerts recently cleared:")
@@ -100,8 +109,11 @@ func printRecent() {
 			if err != nil {
 				log.Fatal("Error getting alert id > ", err)
 			}
-			var jsonAlert Alert
-			json.Unmarshal([]byte(resp.String()), &jsonAlert)
+			var jsonAlert libratoAlert
+			err = json.Unmarshal([]byte(resp.String()), &jsonAlert)
+			if err != nil {
+				log.Fatal("Error unmarshaling Recent JSON")
+			}
 			fmt.Println(jsonAlert.Name)
 		}
 	} else {
@@ -115,12 +127,16 @@ func alertsEnable() {
 		log.Fatal("Error getting alert list > ", err)
 	}
 
-	var jsonRes AlertListResponse
-	json.Unmarshal([]byte(resp.String()), &jsonRes)
+	var jsonRes alertListResponse
+	err = json.Unmarshal([]byte(resp.String()), &jsonRes)
+	if err != nil {
+		log.Fatal("Error unmarshaling for Enable Alerts JSON")
+	}
+
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
-		line := string(scanner.Text())
+		line := scanner.Text()
 		alertName := line
 		if strings.Contains(line, string(':')) {
 			arr := strings.Split(line, string(':'))
@@ -152,12 +168,15 @@ func alertsDisable() {
 		log.Fatal("Error getting alert list > ", err)
 	}
 
-	var jsonRes AlertListResponse
-	json.Unmarshal([]byte(resp.String()), &jsonRes)
+	var jsonRes alertListResponse
+	err = json.Unmarshal([]byte(resp.String()), &jsonRes)
+	if err != nil {
+		log.Fatal("Error unmarshaling for Disabled Alerts JSON")
+	}
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
-		line := string(scanner.Text())
+		line := scanner.Text()
 		alertName := line
 		if strings.Contains(line, string(':')) {
 			arr := strings.Split(line, string(':'))
@@ -190,8 +209,11 @@ func printAlerts() {
 		log.Fatal("Error getting alert list > ", err)
 	}
 
-	var jsonRes AlertListResponse
-	json.Unmarshal([]byte(resp.String()), &jsonRes)
+	var jsonRes alertListResponse
+	err = json.Unmarshal([]byte(resp.String()), &jsonRes)
+	if err != nil {
+		log.Fatal("Error unmarshaling Alert List JSON")
+	}
 
 	for _, alert := range jsonRes.Alerts {
 		fmt.Print(color.HiYellowString(alert.Name), ": ")
@@ -207,12 +229,12 @@ func printHelp() {
 
 	fmt.Println(`# librato-alerts
 
-Small commandline client to enable and disable alerts in librato legacy 
+Small commandline client to enable and disable alerts in librato legacy
 accounts.
 
 Usage: ` + "`" + ` librato-alerts [help | disable | enable | list | status | recent]` + "`" + `
 
-` + "`" + `enable` + "`" + ` and ` + "`" + `disable` + "`" + ` requires a list of alerts to disable passed by standard 
+` + "`" + `enable` + "`" + ` and ` + "`" + `disable` + "`" + ` requires a list of alerts to disable passed by standard
 input thru a pipe, the output of ` + "`" + `list` + "`" + ` can be used for this purpose like this:
 ` + "```" + `
    librato-alerts list | grep <pattern> | librato-alerts disable
@@ -220,7 +242,7 @@ input thru a pipe, the output of ` + "`" + `list` + "`" + ` can be used for this
 
 ## CONFIGURATION
 
-This requires two environment varables to store the librato credentials, 
+This requires two environment varables to store the librato credentials,
 ` + "`" + `LIBRATO_MAIL` + "`" + ` with the librato user's mail and ` + "`" + `LIBRATO_TOKEN` + "`" + `
 with a valid librato API token. API token must have read / write access to allow update alarms state.
 The environment variables can also be placed in an ` + "`" + `.env` + "`" + ` file.
@@ -240,7 +262,7 @@ The environment variables can also be placed in an ` + "`" + `.env` + "`" + ` fi
 
 ## ALMOST KNOWN BUGS or TODO's:
 
- * It does not support pagination yet if there are more alerts than the ones 
+ * It does not support pagination yet if there are more alerts than the ones
    which fits in an API call it will not list them.
  * This is tested against an old, no tagged metrics librato account may work
    in the modern ones.`)
@@ -249,10 +271,7 @@ The environment variables can also be placed in an ` + "`" + `.env` + "`" + ` fi
 
 func main() {
 	// load dotenv
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("No extra vars loaded >", err)
-	}
+	godotenv.Load()
 	// resty configuration
 	resty.SetDebug(false)
 	resty.SetBasicAuth(os.Getenv("LIBRATO_MAIL"), os.Getenv("LIBRATO_TOKEN"))
@@ -266,31 +285,27 @@ func main() {
 	if err != nil {
 		log.Fatal("Unable to read stdin >", err)
 	}
-	if (fi.Mode() & os.ModeCharDevice) == 0 {
-		switch mode {
-		case "list", "status", "recent":
-			log.Fatal(mode, " mode can't be called with piped data, please use enable or disable mode")
-		case "enable":
-			alertsEnable()
-		case "disable":
-			alertsDisable()
-		default:
-			printHelp()
-		}
-	} else {
-		switch mode {
-		case "enable", "disable":
-			log.Fatal(mode + " mode requires a list of alerts piped into comand")
-		case "list":
-			printAlerts()
-		case "help":
-			printHelp()
-		case "status":
-			printFiring()
-		case "recent":
-			printRecent()
-		default:
-			printHelp()
-		}
+
+	piped := (fi.Mode() & os.ModeCharDevice) == 0
+	if piped && (mode == "list" || mode == "status" || mode == "recent") {
+		log.Fatal(mode, " mode can't be called with piped data, please use enable or disable mode")
+	}
+	if !piped && (mode == "enabled" || mode == "disable") {
+		log.Fatal(mode + " mode requires a list of alerts piped into comand")
+	}
+
+	switch mode {
+	case "list":
+		printAlerts()
+	case "enable":
+		alertsEnable()
+	case "disable":
+		alertsDisable()
+	case "recent":
+		printRecent()
+	case "status":
+		printFiring()
+	default:
+		printHelp()
 	}
 }
