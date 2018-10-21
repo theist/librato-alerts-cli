@@ -61,15 +61,24 @@ type alertListResponse struct {
 }
 
 //TODO: firing and recent can be only one func parametrized
-func printFiring() {
+
+func getStatus() (error, *statusResponse) {
 	resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts/status")
 	if err != nil {
-		log.Fatal("Error getting alert status > ", err)
+		return err, nil
 	}
 	var jsonRes statusResponse
 	err = json.Unmarshal([]byte(resp.String()), &jsonRes)
 	if err != nil {
-		log.Fatal("Error unmarshaling Firing JSON: ", err)
+		return err, nil
+	}
+	return nil, &jsonRes
+}
+
+func printFiring() {
+	err, jsonRes := getStatus()
+	if err != nil {
+		log.Fatal("Error getting firing status: ", err)
 	}
 
 	if len(jsonRes.Firing) > 0 {
@@ -92,14 +101,9 @@ func printFiring() {
 }
 
 func printRecent() {
-	resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts/status")
+	err, jsonRes := getStatus()
 	if err != nil {
-		log.Fatal("Error getting alert status > ", err)
-	}
-	var jsonRes statusResponse
-	err = json.Unmarshal([]byte(resp.String()), &jsonRes)
-	if err != nil {
-		log.Fatal("Error unmarshaling Recent JSON: ", err)
+		log.Fatal("Error getting recent status: ", err)
 	}
 
 	if len(jsonRes.Cleared) > 0 {
@@ -201,17 +205,62 @@ func alertsDisable() {
 	}
 }
 
-func printAlerts() {
+func getAlertList() (error, *alertListResponse) {
 
 	resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts")
 	if err != nil {
-		log.Fatal("Error getting alert list > ", err)
+		return err, nil
 	}
 
 	var jsonRes alertListResponse
 	err = json.Unmarshal([]byte(resp.String()), &jsonRes)
 	if err != nil {
-		log.Fatal("Error unmarshaling Alert List JSON: ", err)
+		return err, nil
+	}
+
+	return nil, &jsonRes
+}
+
+func printAlertsStatus() {
+
+	err, jsonRes := getAlertList()
+	if err != nil {
+		log.Fatal("Error Getting alert list ", err)
+	}
+
+	err, statusRes := getStatus()
+	if err != nil {
+		log.Fatal("Error getting status: ", err)
+	}
+
+	for _, alert := range jsonRes.Alerts {
+		fmt.Print(color.HiYellowString(alert.Name), ": ")
+		if alert.Active {
+			status := color.HiGreenString("Active")
+			for _, alertStatus := range statusRes.Cleared {
+				if alert.ID == alertStatus.ID {
+					status = color.GreenString("Recent, Active")
+					break
+				}
+			}
+			for _, alertStatus := range statusRes.Firing {
+				if alert.ID == alertStatus.ID {
+					status = color.HiRedString("Firing, Active")
+					break
+				}
+			}
+			fmt.Println(status)
+		} else {
+			color.Red("Disabled")
+		}
+	}
+}
+
+func printAlerts() {
+
+	err, jsonRes := getAlertList()
+	if err != nil {
+		log.Fatal("Error Getting alert list ", err)
 	}
 
 	for _, alert := range jsonRes.Alerts {
@@ -251,15 +300,16 @@ to generate that file.
 ## MODES
 
 ` + "```" + `
-   list:    List all alerts, telling if they are enabled or disabled.
-   status:  Lists the alert names which are in alarm state.
-   recent:  Lists the alert names of alert which were resolved recently.
-   enable:  Enable alerts passed by stdin. Alerts must be pased one by line,
-            and it will be updated only if they are disabled
-   disable: Disable alerts passed by stdin. Alerts must be pased one by line,
-            and it will be updated only if they are enabled
-   config:  Prints current config in a valid format to be a proper config file.
-   help:    This help.
+   list:       List all alerts, telling if they are enabled or disabled.
+   statuslist: List all alerts, telling if they are enabled or disabled and its status Firing / Recent.
+   status:     Lists the alert names which are in alarm state.
+   recent:     Lists the alert names of alert which were resolved recently.
+   enable:     Enable alerts passed by stdin. Alerts must be pased one by line,
+               and it will be updated only if they are disabled
+   disable:    Disable alerts passed by stdin. Alerts must be pased one by line,
+               and it will be updated only if they are enabled
+   config:     Prints current config in a valid format to be a proper config file.
+   help:       This help.
 ` + "```" + `
 
 ## ALMOST KNOWN BUGS or TODO's:
@@ -317,7 +367,7 @@ func main() {
 	}
 
 	piped := (fi.Mode() & os.ModeCharDevice) == 0
-	if piped && (mode == "list" || mode == "status" || mode == "recent") {
+	if piped && (mode == "list" || mode == "statuslist" || mode == "status" || mode == "recent") {
 		log.Fatal(mode, " mode can't be called with piped data, please use enable or disable mode")
 	}
 	if !piped && (mode == "enabled" || mode == "disable") {
@@ -327,6 +377,8 @@ func main() {
 	switch mode {
 	case "list":
 		printAlerts()
+	case "statuslist":
+		printAlertsStatus()
 	case "enable":
 		alertsEnable()
 	case "disable":
