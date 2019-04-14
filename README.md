@@ -33,7 +33,5 @@ The environment variables can also be placed in an `.env` file.
 
 ## ALMOST KNOWN BUGS or TODO's:
 
- * It does not support pagination yet if there are more alerts than the ones 
-   which fits in an API call it will not list them.
  * This is tested against an old, no tagged metrics librato account may work
    in the modern ones.
