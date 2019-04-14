@@ -1,14 +1,14 @@
-# librato-alerts
+# librato-alerts-cli
 
 Small commandline client to enable and disable alerts in librato legacy 
 accounts.
 
-Usage: ` librato-alerts [help | disable | enable | list | status | recent]`
+Usage: ` librato-alerts-cli [help | disable | enable | list | status | recent]`
 
 `enable` and `disable` requires a list of alerts to disable passed by standard 
 input thru a pipe, the output of `list` can be used for this purpose like this:
 ```
-   librato-alerts list | grep <pattern> | librato-alerts disable
+   librato-alerts-cli list | grep <pattern> | librato-alerts-cli disable
 ```
 
 ## CONFIGURATION
