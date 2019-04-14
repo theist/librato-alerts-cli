@@ -56,17 +56,71 @@ type libratoAlert struct {
 	Md             bool `json:"md"`
 }
 
+type alertList []libratoAlert
+
+type queryMeta struct {
+	Offset int `json:"offset"`
+	Length int `json:"length"`
+	Found  int `json:"found"`
+	Total  int `json:"total"`
+}
+
 type alertListResponse struct {
+	Query  queryMeta      `json:"query"`
 	Alerts []libratoAlert `json:"alerts"`
 }
 
 //TODO: firing and recent can be only one func parametrized
+
+func getAllAlertList() (error, *alertList) {
+	offset := 0
+	length := 0
+	total := 1000
+
+	var alerts alertList
+
+	for offset+length < total {
+		offset = offset + length
+		resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts?offset=" + strconv.Itoa(offset))
+		if err != nil {
+			return err, nil
+		}
+
+		var jsonRes alertListResponse
+		err = json.Unmarshal([]byte(resp.String()), &jsonRes)
+		if err != nil {
+			return err, nil
+		}
+		length = jsonRes.Query.Length
+		offset = jsonRes.Query.Offset
+		total = jsonRes.Query.Total
+		alerts = append(alerts, jsonRes.Alerts...)
+	}
+
+	return nil, &alerts
+}
+
+func printAlerts() {
+	err, alerts := getAllAlertList()
+	if err != nil {
+		log.Fatal("Eror getting alert list ", err)
+	}
+	for _, alert := range *alerts {
+		fmt.Print(color.HiYellowString(alert.Name), ": ")
+		if alert.Active {
+			color.HiGreen("Active")
+		} else {
+			color.HiRed("Disabled")
+		}
+	}
+}
 
 func getStatus() (error, *statusResponse) {
 	resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts/status")
 	if err != nil {
 		return err, nil
 	}
+	log.Printf("%v\n", resp.String())
 	var jsonRes statusResponse
 	err = json.Unmarshal([]byte(resp.String()), &jsonRes)
 	if err != nil {
@@ -126,15 +180,9 @@ func printRecent() {
 }
 
 func alertsEnable() {
-	resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts")
+	err, alerts := getAllAlertList()
 	if err != nil {
-		log.Fatal("Error getting alert list > ", err)
-	}
-
-	var jsonRes alertListResponse
-	err = json.Unmarshal([]byte(resp.String()), &jsonRes)
-	if err != nil {
-		log.Fatal("Error unmarshaling for Enable Alerts JSON: ", err)
+		log.Fatal("Eror getting alert list ", err)
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
@@ -145,7 +193,7 @@ func alertsEnable() {
 			arr := strings.Split(line, string(':'))
 			alertName = arr[0]
 		}
-		for _, alert := range jsonRes.Alerts {
+		for _, alert := range *alerts {
 			if alert.Name == alertName {
 				if alert.Active {
 					fmt.Println("alert " + alertName + " already enabled")
@@ -166,15 +214,9 @@ func alertsEnable() {
 }
 
 func alertsDisable() {
-	resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts")
+	err, alerts := getAllAlertList()
 	if err != nil {
-		log.Fatal("Error getting alert list > ", err)
-	}
-
-	var jsonRes alertListResponse
-	err = json.Unmarshal([]byte(resp.String()), &jsonRes)
-	if err != nil {
-		log.Fatal("Error unmarshaling for Disabled Alerts JSON: ", err)
+		log.Fatal("Eror getting alert list ", err)
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
@@ -185,7 +227,7 @@ func alertsDisable() {
 			arr := strings.Split(line, string(':'))
 			alertName = arr[0]
 		}
-		for _, alert := range jsonRes.Alerts {
+		for _, alert := range *alerts {
 			if alert.Name == alertName {
 				if alert.Active {
 					fmt.Println("disabling alert " + alert.Name)
@@ -205,27 +247,10 @@ func alertsDisable() {
 	}
 }
 
-func getAlertList() (error, *alertListResponse) {
-
-	resp, err := resty.R().Get("https://metrics-api.librato.com/v1/alerts")
-	if err != nil {
-		return err, nil
-	}
-
-	var jsonRes alertListResponse
-	err = json.Unmarshal([]byte(resp.String()), &jsonRes)
-	if err != nil {
-		return err, nil
-	}
-
-	return nil, &jsonRes
-}
-
 func printAlertsStatus() {
-
-	err, jsonRes := getAlertList()
+	err, alerts := getAllAlertList()
 	if err != nil {
-		log.Fatal("Error Getting alert list ", err)
+		log.Fatal("Eror getting alert list ", err)
 	}
 
 	err, statusRes := getStatus()
@@ -233,7 +258,7 @@ func printAlertsStatus() {
 		log.Fatal("Error getting status: ", err)
 	}
 
-	for _, alert := range jsonRes.Alerts {
+	for _, alert := range *alerts {
 		fmt.Print(color.HiYellowString(alert.Name), ": ")
 		if alert.Active {
 			status := color.HiGreenString("Active")
@@ -252,23 +277,6 @@ func printAlertsStatus() {
 			fmt.Println(status)
 		} else {
 			color.Red("Disabled")
-		}
-	}
-}
-
-func printAlerts() {
-
-	err, jsonRes := getAlertList()
-	if err != nil {
-		log.Fatal("Error Getting alert list ", err)
-	}
-
-	for _, alert := range jsonRes.Alerts {
-		fmt.Print(color.HiYellowString(alert.Name), ": ")
-		if alert.Active {
-			color.HiGreen("Active")
-		} else {
-			color.HiRed("Disabled")
 		}
 	}
 }
@@ -314,8 +322,6 @@ to generate that file.
 
 ## ALMOST KNOWN BUGS or TODO's:
 
- * It does not support pagination yet if there are more alerts than the ones
-   which fits in an API call it will not list them.
  * This is tested against an old, no tagged metrics librato account may work
    in the modern ones.`)
 }
@@ -354,7 +360,7 @@ func main() {
 	if len(os.Args) > 1 {
 		mode = os.Args[1]
 	}
-	if mode !="config" && mode != "help" && !checkEnv() {
+	if mode != "config" && mode != "help" && !checkEnv() {
 		log.Fatal("Insufficient configuration. Please run librato-alerts-cli config and follow instructions")
 	}
 	// resty configuration
