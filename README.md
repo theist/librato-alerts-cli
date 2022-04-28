@@ -11,6 +11,14 @@ input thru a pipe, the output of `list` can be used for this purpose like this:
    librato-alerts-cli list | grep <pattern> | librato-alerts-cli disable
 ```
 
+## INSTALL
+
+As any go program you need at least go 1.16 installed on your system and then
+
+```
+go install github.com/theist/librato-alerts-cli@latest
+```
+
 ## CONFIGURATION
 
 This requires two environment varables to store the librato credentials, 
