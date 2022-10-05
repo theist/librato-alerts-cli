@@ -200,11 +200,14 @@ func alertsEnable() {
 				} else {
 					fmt.Println("enabling alert " + alertName)
 					alert.Active = true
-					_, updateErr := resty.R().
+					result, updateErr := resty.R().
 						SetBody(alert).
 						Put("https://metrics-api.librato.com/v1/alerts/" + strconv.Itoa(alert.ID))
 					if updateErr != nil {
 						log.Fatal("Error updating alert " + alert.Name)
+					}
+					if result.IsError() {
+						log.Fatalf("Error updating alter %v: Return code (%v), Return body %v", alert.Name, result.StatusCode(), string(result.Body()))
 					}
 					fmt.Println(alert.Name + " enabled")
 				}
@@ -232,11 +235,14 @@ func alertsDisable() {
 				if alert.Active {
 					fmt.Println("disabling alert " + alert.Name)
 					alert.Active = false
-					_, updateErr := resty.R().
+					result, updateErr := resty.R().
 						SetBody(alert).
 						Put("https://metrics-api.librato.com/v1/alerts/" + strconv.Itoa(alert.ID))
 					if updateErr != nil {
 						log.Fatal("Error updating alert " + alert.Name)
+					}
+					if result.IsError() {
+						log.Fatalf("Error updating alter %v: Return code (%v), Return body %v", alert.Name, result.StatusCode(), string(result.Body()))
 					}
 					fmt.Println(alert.Name + " disabled")
 				} else {
