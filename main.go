@@ -4,14 +4,15 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/fatih/color"
-	"github.com/joho/godotenv"
-	"github.com/mitchellh/go-homedir"
-	"gopkg.in/resty.v1"
 	"log"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/fatih/color"
+	"github.com/joho/godotenv"
+	"github.com/mitchellh/go-homedir"
+	"gopkg.in/resty.v1"
 )
 
 type statusResponse struct {
