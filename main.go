@@ -201,6 +201,9 @@ func alertsEnable() {
 				} else {
 					fmt.Println("enabling alert " + alertName)
 					alert.Active = true
+					if alert.Description == "" {
+						alert.Description = "-"
+					}
 					result, updateErr := resty.R().
 						SetBody(alert).
 						Put("https://metrics-api.librato.com/v1/alerts/" + strconv.Itoa(alert.ID))
@@ -236,6 +239,9 @@ func alertsDisable() {
 				if alert.Active {
 					fmt.Println("disabling alert " + alert.Name)
 					alert.Active = false
+					if alert.Description == "" {
+						alert.Description = "-"
+					}
 					result, updateErr := resty.R().
 						SetBody(alert).
 						Put("https://metrics-api.librato.com/v1/alerts/" + strconv.Itoa(alert.ID))
