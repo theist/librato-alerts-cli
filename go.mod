@@ -1,4 +1,4 @@
-module librato-alerts-cli
+module github.com/theist/librato-alerts-cli
 
 go 1.19
 
